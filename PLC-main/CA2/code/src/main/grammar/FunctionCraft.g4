@@ -365,6 +365,7 @@ expression returns [Expression expRet]:
         AppendExpression appendExp = new AppendExpression($e1.expRet);
         appendExp.addAppendedExpression($e2.expRet);
         $expRet = appendExp;
+        .setLine($a.line);
     }
     | e3 = eqaulityExpression {$expRet = $e3.expRet;};
 
@@ -486,9 +487,6 @@ otherExpression returns [Expression expRet]:
     | match = matchPatternStatement {$expRet = $match.matchPatRet;}
     | len_ = lenStatement {$expRet = $len_.lenRet;}
     | LPAR (e = expression {$expRet = $e.expRet;})? RPAR;
-
-
-
 
 lambdaFunction returns [Expression lambdaRet]:
     a = ARROW  fd = functionArgumentsDeclaration

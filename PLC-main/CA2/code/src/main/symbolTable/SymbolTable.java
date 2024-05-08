@@ -13,7 +13,7 @@ public class SymbolTable {
     public static SymbolTable root;
     private static final Stack<SymbolTable> stack = new Stack<>();
     private final Map<String, SymbolTableItem> items;
-    public SymbolTable makeSymbolTableSnapshot(){
+    public SymbolTable getCurrentSymbolTable(){
         SymbolTable snapshot = new SymbolTable();
         for(var item : SymbolTable.top.items.entrySet()){
             try {

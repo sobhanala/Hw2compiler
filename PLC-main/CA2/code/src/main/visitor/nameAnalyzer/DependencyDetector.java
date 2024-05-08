@@ -39,17 +39,18 @@ public class DependencyDetector extends Visitor<Void> {
 
     @Override
     public Void visit(AccessExpression accessExpression){
-        if(accessExpression.isFunctionCall() && accessExpression.getAccessedExpression() instanceof Identifier id){
+        if(accessExpression.isFunctionCall() && accessExpression.getAccessedExpression() instanceof Identifier id)
             dependencyGraph.addEdge(currScope, id.getName());
-        }
 
-        for(Expression arg : accessExpression.getArguments()){
-            arg.accept(this);
-        }
+        for(Expression currentDim : accessExpression.getDimentionalAccess())
+            currentDim.accept(this);
 
-        for(Expression dimAccess : accessExpression.getDimentionalAccess()){
-            dimAccess.accept(this);
-        }
+        for(Expression currentArg : accessExpression.getArguments())
+            currentArg.accept(this);
+
+
+
+
         return null;
     }
 
@@ -58,80 +59,81 @@ public class DependencyDetector extends Visitor<Void> {
         if(assignStatement.isAccessList())
             assignStatement.getAccessListExpression().accept(this);
         assignStatement.getAssignExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(AppendExpression appendExpression){
         appendExpression.getAppendee().accept(this);
-        for(Expression appended : appendExpression.getAppendeds()){
-            appended.accept(this);
-        }
-        return null;
+        for(Expression currentApp : appendExpression.getAppendeds())
+            currentApp.accept(this);
+
+        return (null);
     }
     @Override
     public Void visit(BinaryExpression binaryExpression){
         binaryExpression.getFirstOperand().accept(this);
         binaryExpression.getSecondOperand().accept(this);
-        return null;
+        return (null);
     }
 
     @Override
     public Void visit(ChopStatement chopStatement){
         chopStatement.getChopExpression().accept(this);
-        return null;
+        return (null);
     }
 
     @Override
     public Void visit(ChompStatement chompStatement){
         chompStatement.getChompExpression().accept(this);
-        return null;
+        return (null);
     }
 
     @Override
     public Void visit(ExpressionStatement expressionStatement){
         expressionStatement.getExpression().accept(this);
-        return null;
+        return (null);
     }
 
     @Override
     public Void visit(FunctionDeclaration functionDeclaration){
-        for (Statement stmt : functionDeclaration.getBody()) {
-            stmt.accept(this);
-        }
+        for (Statement currentStm : functionDeclaration.getBody())
+            currentStm.accept(this);
 
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(ForStatement forStatement){
 
-        for(Statement stmt : forStatement.getLoopBody()){
-            stmt.accept(this);
-        }
-
-        for(Expression range : forStatement.getRangeExpressions()){
-            range.accept(this);
-        }
-
-        for(Expression cond : forStatement.getLoopBodyExpressions()){
-            cond.accept(this);
-        }
+        for(Statement currentStm : forStatement.getLoopBody())
+            currentStm.accept(this);
 
 
-        return null;
+        for(Expression currange : forStatement.getRangeExpressions())
+            currange.accept(this);
+
+
+        for(Expression currentCon : forStatement.getLoopBodyExpressions())
+            currentCon.accept(this);
+
+
+
+        return (null);
     }
 
     @Override
     public Void visit(LoopDoStatement loopDoStatement){
 
-        for(Statement stmt : loopDoStatement.getLoopBodyStmts()){
-            stmt.accept(this);
-        }
+        for(Statement currentStm : loopDoStatement.getLoopBodyStmts())
+            currentStm.accept(this);
 
-        for(Expression cond : loopDoStatement.getLoopConditions()){
-            cond.accept(this);
-        }
+
+        for(Expression currentCon : loopDoStatement.getLoopConditions())
+            currentCon.accept(this);
+
 
         if(loopDoStatement.getLoopRetStmt() != null)
             loopDoStatement.getLoopRetStmt().accept(this);
@@ -147,41 +149,43 @@ public class DependencyDetector extends Visitor<Void> {
 
     public void findDependency(){
         ArrayList<List<String>> cycles = dependencyGraph.findCycles();
-        for(List<String> cycle : cycles){
+        for(List<String> cycle : cycles)
             dependencyError.add(new CircularDependency(cycle));
-        }
+
     }
 
 
     @Override
     public Void visit(IfStatement ifStatement){
 
-        for(Statement thenStmt : ifStatement.getThenBody()){
-            thenStmt.accept(this);
-        }
-
-        for(Statement elseStmt : ifStatement.getElseBody()){
-            elseStmt.accept(this);
-        }
 
 
-        for(Expression cond : ifStatement.getConditions()){
-            cond.accept(this);
-        }
+        for(Statement elseStm : ifStatement.getElseBody())
+            elseStm.accept(this);
+
+
+        for(Statement thenStm : ifStatement.getThenBody())
+            thenStm.accept(this);
 
 
 
+        for(Expression curCon : ifStatement.getConditions())
+            curCon.accept(this);
 
-        return null;
+
+
+
+
+        return (null);
     }
 
 
     @Override
     public Void visit(ReturnStatement returnStatement){
-        if (returnStatement.hasRetExpression()){
+        if (returnStatement.hasRetExpression())
             returnStatement.getReturnExp().accept(this);
-        }
-        return null;
+
+        return (null);
     }
 
     @Override
@@ -190,21 +194,26 @@ public class DependencyDetector extends Visitor<Void> {
             currScope = functionDeclaration.getFunctionName().getName();
             functionDeclaration.accept(this);
         }
-        currScope = null;
-        return null;
+        currScope = (null);
+        return (null);
     }
 
     @Override
     public Void visit(PutStatement putStatement){
         putStatement.getExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(PushStatement pushStatement){
+
         pushStatement.getInitial().accept(this);
+
         pushStatement.getToBeAdded().accept(this);
-        return null;
+
+
+        return (null);
     }
 
 
@@ -212,7 +221,8 @@ public class DependencyDetector extends Visitor<Void> {
     @Override
     public Void visit(MatchPatternStatement matchPatternStatement){
         matchPatternStatement.getMatchArgument().accept(this);
-        return null;
+
+        return (null);
     }
 
 
@@ -221,10 +231,10 @@ public class DependencyDetector extends Visitor<Void> {
 
     @Override
     public Void visit(ListValue listValue){
-        for(Expression exp : listValue.getElements()){
-            exp.accept(this);
-        }
-        return null;
+        for(Expression currentExp : listValue.getElements())
+            currentExp.accept(this);
+
+        return (null);
     }
 
 
@@ -232,17 +242,18 @@ public class DependencyDetector extends Visitor<Void> {
     @Override
     public Void visit(LambdaExpression lambdaExpression){
         
-        for(Statement stm : lambdaExpression.getBody()){
-            stm.accept(this);
-        }
-        return null;
+        for(Statement currentStm : lambdaExpression.getBody())
+            currentStm.accept(this);
+
+        return (null);
     }
 
 
     @Override
     public Void visit(UnaryExpression unaryExpression){
         unaryExpression.getExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
 

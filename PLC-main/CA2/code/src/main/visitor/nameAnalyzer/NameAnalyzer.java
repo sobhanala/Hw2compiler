@@ -126,18 +126,18 @@ public class NameAnalyzer extends Visitor<Void> {
         visitFunctionBodies(program,functionItems);
         visitPatternBodies(program,patternItems);
         program.getMain().accept(this);
-        return null;
+        return (null);
     }
 
     @Override
     public Void visit(Identifier identifier){
         try {
             SymbolTable.top.getItem("VAR:" + identifier.getName());
-        } catch (ItemNotFound e) {
-            nameErrors.add(new VariableNotDeclared(identifier.getLine(),
-                    identifier.getName()));
         }
-        return null;
+        catch (ItemNotFound ignored) {
+            nameErrors.add(new VariableNotDeclared(identifier.getLine(), identifier.getName()));
+        }
+        return (null);
     }
 
 
@@ -147,29 +147,32 @@ public class NameAnalyzer extends Visitor<Void> {
         VarItem varItem = new VarItem(varDeclaration.getName());
         try {
             SymbolTable.top.put(varItem);
-        } catch (ItemAlreadyExists e) { 
-            nameErrors.add(new DuplicateArg(varDeclaration.getLine(),
-                    varDeclaration.getName().getName()));
         }
-        return null;
+        catch (ItemAlreadyExists ignored) {
+            nameErrors.add(new DuplicateArg(varDeclaration.getLine(), varDeclaration.getName().getName()));
+        }
+
+        return (null);
     }
 
     @Override
     public Void visit(FunctionDeclaration functionDeclaration){
-        for (VarDeclaration varDec : functionDeclaration.getArgs()) {
-            VarItem varItem = new VarItem(varDec.getName());
-            if(varItem.getName().equals(functionDeclaration.getFunctionName().getName())){
-                nameErrors.add(new IdenticalArgFunctionName(functionDeclaration.getLine(),
-                        functionDeclaration.getFunctionName().getName()));
-            }
-            varDec.accept(this);
+        for (VarDeclaration currentDec : functionDeclaration.getArgs()) {
+            VarItem varItem = new VarItem(currentDec.getName());
+            String varName=varItem.getName();
+            String functionDecName=functionDeclaration.getFunctionName().getName();
+
+            if(functionDecName.equals(varName))
+                nameErrors.add(new IdenticalArgFunctionName(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName()));
+
+            currentDec.accept(this);
         }
 
-        for (Statement stmt : functionDeclaration.getBody()) {
-            stmt.accept(this);
-        }
+        for (Statement currentStm : functionDeclaration.getBody())
+            currentStm.accept(this);
 
-        return null;
+
+        return (null);
     }
 
     @Override
@@ -177,135 +180,162 @@ public class NameAnalyzer extends Visitor<Void> {
         VarItem varItem = new VarItem(patternDeclaration.getTargetVariable());
         try {
             SymbolTable.top.put(varItem);
-        } catch (ItemAlreadyExists ignored) {}
-        if(patternDeclaration.getTargetVariable().getName().equals(patternDeclaration.getPatternName().getName())){
-            nameErrors.add(new IdenticalArgPatternName(patternDeclaration.getLine(),
-                    patternDeclaration.getPatternName().getName()));
         }
-        for(Expression cond : patternDeclaration.getConditions()) {
-            cond.accept(this);
-        }
-        for(Expression returnExp : patternDeclaration.getReturnExp()) {
+        catch (ItemAlreadyExists ignored) {}
+
+       String patternName= patternDeclaration.getTargetVariable().getName();
+        String secondPatternName= patternDeclaration.getPatternName().getName();
+
+        if(patternName.equals(secondPatternName))
+            nameErrors.add(new IdenticalArgPatternName(patternDeclaration.getLine(), patternDeclaration.getPatternName().getName()));
+
+        for(Expression currentCon : patternDeclaration.getConditions())
+            currentCon.accept(this);
+
+        for(Expression returnExp : patternDeclaration.getReturnExp())
             returnExp.accept(this);
-        }
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(MainDeclaration mainDeclaration){
-        for (Statement stmt : mainDeclaration.getBody()) {
-            stmt.accept(this);
-        }
-        return null;
+        for (Statement currentStm : mainDeclaration.getBody())
+            currentStm.accept(this);
+
+        return (null);
     }
 
     @Override
     public Void visit(ReturnStatement returnStatement){
-        if (returnStatement.hasRetExpression()){
+        boolean hasRetExpr= returnStatement.hasRetExpression();
+
+        if (hasRetExpr)
             returnStatement.getReturnExp().accept(this);
-        }
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(IfStatement ifStatement){
-        for(Expression cond : ifStatement.getConditions()){
-            cond.accept(this);
-        }
+        for(Expression currentCond : ifStatement.getConditions())
+            currentCond .accept(this);
 
 
-        SymbolTable dummySymbolTable = SymbolTable.top.makeSymbolTableSnapshot();
-        SymbolTable.push(dummySymbolTable);
-        for(Statement thenStmt : ifStatement.getThenBody()){
-            thenStmt.accept(this);
-        }
-        SymbolTable.pop();
-        dummySymbolTable = SymbolTable.top.makeSymbolTableSnapshot();
-        SymbolTable.push(dummySymbolTable);
-        for(Statement elseStmt : ifStatement.getElseBody()){
-            elseStmt.accept(this);
-        }
+
+        createTempTable();
+
+        for(Statement currentThenStmt : ifStatement.getThenBody())
+            currentThenStmt.accept(this);
+
         SymbolTable.pop();
 
-        return null;
+        createTempTable();
+        for(Statement currentElseStmt : ifStatement.getElseBody()){
+            currentElseStmt.accept(this);
+        }
+
+        SymbolTable.pop();
+
+        return (null);
     }
 
     @Override
     public Void visit(PutStatement putStatement){
         putStatement.getExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(LenStatement lenStatement){
         lenStatement.getExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(PushStatement pushStatement){
         pushStatement.getInitial().accept(this);
         pushStatement.getToBeAdded().accept(this);
-        return null;
+
+        return (null);
+    }
+
+
+
+    private void createTempTable(){
+        SymbolTable tempTable = SymbolTable.top.getCurrentSymbolTable();
+        SymbolTable.push(tempTable);
     }
 
     @Override
     public Void visit(LoopDoStatement loopDoStatement){ 
 
-        SymbolTable dummySymbolTable = SymbolTable.top.makeSymbolTableSnapshot();
-        SymbolTable.push(dummySymbolTable);
-        for(Expression cond : loopDoStatement.getLoopConditions()){
-            cond.accept(this);
-        }
-        for(Statement stmt : loopDoStatement.getLoopBodyStmts()){
-            stmt.accept(this);
-        }
-        if (loopDoStatement.getLoopRetStmt() != null)
-            loopDoStatement.getLoopRetStmt().accept(this);
+        createTempTable();
+
+
+        for(Expression currentCon : loopDoStatement.getLoopConditions())
+            currentCon.accept(this);
+
+        for(Statement currentStm : loopDoStatement.getLoopBodyStmts())
+            currentStm.accept(this);
+
+        ReturnStatement loopRetStm=(loopDoStatement.getLoopRetStmt());
+
+        if ( loopRetStm != null)
+            loopRetStm.accept(this);
+
         SymbolTable.pop();
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(ForStatement forStatement){
         
-        for(Expression range : forStatement.getRangeExpressions()){
+        for(Expression range : forStatement.getRangeExpressions())
             range.accept(this);
-        }
 
-        SymbolTable dummySymbolTable = SymbolTable.top.makeSymbolTableSnapshot();
-        SymbolTable.push(dummySymbolTable);
+
+        createTempTable();
+
         try {
             SymbolTable.top.put(new VarItem(forStatement.getIteratorId()));
-        } catch (ItemAlreadyExists ignored) {}
+        }
+        catch (ItemAlreadyExists ignored) {}
 
-        for(Expression cond : forStatement.getLoopBodyExpressions()){
-            cond.accept(this);
-        }
-        for(Statement stmt : forStatement.getLoopBody()){
-            stmt.accept(this);
-        }
+        for(Expression currentCon : forStatement.getLoopBodyExpressions())
+            currentCon.accept(this);
+
+        for(Statement currentStm : forStatement.getLoopBody())
+            currentStm.accept(this);
+
 
         SymbolTable.pop();
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(MatchPatternStatement matchPatternStatement){
         matchPatternStatement.getMatchArgument().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(ChopStatement chopStatement){
         chopStatement.getChopExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(ChompStatement chompStatement){
         chompStatement.getChompExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
@@ -317,35 +347,40 @@ public class NameAnalyzer extends Visitor<Void> {
         if(assignStatement.isAccessList())
             assignStatement.getAccessListExpression().accept(this);
         assignStatement.getAssignExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(ExpressionStatement expressionStatement){
         expressionStatement.getExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(AppendExpression appendExpression){
         appendExpression.getAppendee().accept(this);
-        for(Expression appended : appendExpression.getAppendeds()){
-            appended.accept(this);
-        }
-        return null;
+        for(Expression currentApend : appendExpression.getAppendeds())
+            currentApend.accept(this);
+
+        return (null);
     }
 
     @Override
     public Void visit(BinaryExpression binaryExpression){
         binaryExpression.getFirstOperand().accept(this);
         binaryExpression.getSecondOperand().accept(this);
-        return null;
+
+
+        return (null);
     }
 
     @Override
     public Void visit(UnaryExpression unaryExpression){
         unaryExpression.getExpression().accept(this);
-        return null;
+
+        return (null);
     }
 
     @Override
@@ -396,29 +431,78 @@ public class NameAnalyzer extends Visitor<Void> {
         for(Expression dimAccess : accessExpression.getDimentionalAccess()){
             dimAccess.accept(this);
         }
-        return null;
+
+        return (null);
     }
+
+//    @Override
+//    public Void visit(AccessExpression accessExpression) {
+//
+//        if (accessExpression.isFunctionCall())
+//            handleFunctionCall(accessExpression);
+//        else
+//            accessExpression.getAccessedExpression().accept(this);
+//
+//
+//        for (Expression currentExpr : accessExpression.getDimentionalAccess())
+//            currentExpr.accept(this);
+//
+//        for (Expression Expr : accessExpression.getArguments())
+//            Expr.accept(this);
+//
+//        return (null);
+//    }
+//
+//    private void handleFunctionCall(AccessExpression accessExpression) {
+//        String idName="";
+//        try {
+//            if (accessExpression.getAccessedExpression() instanceof Identifier id) {
+//                idName=id.getName();
+//                FunctionItem functionItem = (FunctionItem) SymbolTable.top.getItem( "Function:" + idName);
+//
+//                int argCounter = 0;
+//                    for(VarDeclaration currentArgum : functionItem.getFunctionDeclaration().getArgs()){
+//                        if(currentArgum.getDefaultVal() != null)
+//                            argCounter++;
+//                    }
+//                    int argDiff = functionItem.getFunctionDeclaration().getArgs().size() - accessExpression.getArguments().size();
+//                    if(argDiff > argCounter || argDiff < 0)
+//                        nameErrors.add(new ArgMisMatch(accessExpression.getLine(), functionItem.getName()));
+//
+//            } else
+//                throw new ItemNotFound();
+//
+//        }
+//        catch (ItemNotFound ignored) {
+//            nameErrors.add(
+//                    new FunctionNotDeclared(
+//                            accessExpression.getLine(),
+//                           idName
+//                    )
+//            );
+//        }
+//    }
 
     @Override
     public Void visit(LambdaExpression lambdaExpression){
-        SymbolTable functionSymbolTable = SymbolTable.top.makeSymbolTableSnapshot();
-        SymbolTable.push(functionSymbolTable);
-        for(VarDeclaration arg : lambdaExpression.getDeclarationArgs()){
-            arg.accept(this);
-        }
-        for(Statement stm : lambdaExpression.getBody()){
-            stm.accept(this);
-        }
+        SymbolTable.push(SymbolTable.top.getCurrentSymbolTable());
+        for(VarDeclaration currentArg : lambdaExpression.getDeclarationArgs())
+            currentArg.accept(this);
+
+        for(Statement currentStm : lambdaExpression.getBody())
+            currentStm.accept(this);
+
         SymbolTable.pop();
-        return null;
+
+        return (null);
     }
 
     @Override
     public Void visit(ListValue listValue){
-        for(Expression exp : listValue.getElements()){
-            exp.accept(this);
-        }
-        return null;
+        for(Expression currentExpr : listValue.getElements())
+            currentExpr.accept(this);
+
+        return (null);
     }
     @Override
     public Void visit(FunctionPointer functionPointer){
@@ -432,7 +516,7 @@ public class NameAnalyzer extends Visitor<Void> {
             nameErrors.add(new FunctionNotDeclared(functionPointer.getLine(),
                         functionPointer.getId().getName()));
         }
-        return null;
+        return (null);
     }
 
 }

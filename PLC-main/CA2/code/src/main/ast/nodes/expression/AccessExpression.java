@@ -47,6 +47,10 @@ public class AccessExpression extends Expression{
     public void setDimentionalAccess(ArrayList<Expression> dimentionalAccess) {
         this.dimentionalAccess = dimentionalAccess;
     }
+
+    public void getName(){
+        return ;
+    }
     @Override
     public String toString(){return "AccessExpression";}
     @Override
