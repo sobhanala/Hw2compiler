@@ -1,4 +1,4 @@
-# FunctionCraft Compiler â€” Name Analysis
+# FunctionCraft Compiler — Name Analysis
 
 A Java/ANTLR compiler coursework project for the FunctionCraft language. It builds an abstract syntax tree, reports name-analysis errors, checks function dependencies for cycles, and prints the AST when those checks succeed.
 
