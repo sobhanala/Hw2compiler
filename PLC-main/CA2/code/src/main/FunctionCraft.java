@@ -21,7 +21,11 @@ import java.util.*;
 
 public class FunctionCraft {
     public static void main(String[] args) throws IOException{
-        CharStream reader = CharStreams.fromFileName("C:/Users/Click/Desktop/PLC-main/PLC-main/CA2/code/samples/#0/sample.fl");
+        if (args.length != 1) {
+            System.err.println("Usage: main.FunctionCraft <source-file>");
+            return;
+        }
+        CharStream reader = CharStreams.fromFileName(args[0]);
         FunctionCraftLexer flLexer = new FunctionCraftLexer(reader);
         CommonTokenStream tokens = new CommonTokenStream(flLexer);
         FunctionCraftParser flParser = new FunctionCraftParser(tokens);

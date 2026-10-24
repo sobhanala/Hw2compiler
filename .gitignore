@@ -1,2 +1,9 @@
 # Project exclude paths
 /out/
+
+# Local development files
+.idea/
+*.iml
+*.class
+**/target/
+.env
